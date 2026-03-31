@@ -1,6 +1,10 @@
-# GB10 Dual-Node Setup Plan
+# GB10 Setup Plan
 
 > Status: **Requirements complete** — ready for execution.
+>
+> This plan covers two models on separate GB10 units:
+> - **Nemotron-3-Super-120B** (NVFP4) — primary production model
+> - **Nemotron-3-Nano-30B** (FP8) — lightweight, high-throughput model
 
 ## Hardware
 
@@ -169,6 +173,121 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 ---
 
+---
+
+## Nemotron-3-Nano-30B-A3B-FP8 (Second GB10)
+
+### Model Overview
+
+| Spec | Value |
+|---|---|
+| Architecture | Mamba2-Transformer Hybrid MoE |
+| Total params | 30B |
+| Active params per token | ~3.5B (~10% of total) |
+| Quantization | FP8 (selective — attention & Mamba layers kept in BF16) |
+| FP8 weights size | ~30 GB |
+| Context length | 256K default (up to 1M) |
+| MoE layers | 23 layers, 128 routed experts + 1 shared per layer, 6 active |
+| Attention layers | 6 (GQA, 2 groups) |
+| Mamba-2 layers | 23 |
+
+### GB10 Fit
+
+- FP8 weights (~30 GB) fit easily in 128 GB unified memory
+- Single node, TP=1 — no NVLink needed
+- Higher `gpu_memory_utilization` (0.85) possible due to smaller model
+- More headroom for KV cache → better concurrent performance
+
+### Phase N1 — Deploy Nano-30B FP8
+
+**Goal:** Serve Nemotron-3-Nano-30B-A3B-FP8 on the second GB10.
+
+- [ ] N1.1 Download model:
+  ```bash
+  huggingface-cli download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
+  ```
+- [ ] N1.2 Launch via spark-vllm-docker recipe:
+  ```bash
+  cd spark-vllm-docker/
+  ./run-recipe.sh nemotron-3-nano-fp8 --solo --setup
+  ```
+  Or use the wrapper script:
+  ```bash
+  ./scripts/serve_nano30b.sh --setup
+  ```
+- [ ] N1.3 Verify serving: `curl http://localhost:8000/v1/models`
+- [ ] N1.4 Run API tests:
+  ```bash
+  python3 scripts/test_api.py --all --base-url http://<nano-gb10-ip>:8000/v1
+  ```
+
+**Recipe:** `spark-vllm-docker/recipes/nemotron-3-nano-fp8.yaml`
+
+**vLLM command (from recipe):**
+```bash
+vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8 \
+  --moe-backend cutlass \
+  --kv-cache-dtype fp8 \
+  --trust-remote-code \
+  --enable-auto-tool-choice \
+  --tool-call-parser qwen3_coder \
+  --reasoning-parser-plugin nano_v3_reasoning_parser.py \
+  --reasoning-parser nano_v3 \
+  --enable-prefix-caching \
+  --load-format fastsafetensors \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 262144 \
+  --host 0.0.0.0 --port 8000
+```
+
+### Phase N2 — Benchmark & Evaluate
+
+**Goal:** Measure output speed and compare with 120B deployment.
+
+- [ ] N2.1 Run throughput benchmark:
+  ```bash
+  python3 scripts/bench_nano30b.py --full --output bench_nano30b_results.json \
+    --base-url http://<nano-gb10-ip>:8000/v1
+  ```
+- [ ] N2.2 Benchmark results to collect:
+  - Time to first token (TTFT)
+  - Single-user output tokens/sec
+  - Concurrent output tokens/sec (1, 3, 5, 10 users)
+  - Output speed at different generation lengths (64–1024 tokens)
+  - Reasoning on vs off comparison
+- [ ] N2.3 Compare quality vs 120B on security tasks (same eval prompts)
+- [ ] N2.4 Document results in Notes.md
+
+**Benchmark scripts:**
+- `scripts/bench_nano30b.py` — dedicated throughput benchmark
+- `scripts/test_api.py` — functional tests (also measures t/s)
+
+### Phase N3 — LoRA Fine-tuning (if proceeding)
+
+**Goal:** Fine-tune Nano-30B for security ops, same as 120B pipeline.
+
+- [ ] N3.1 Run LoRA training with existing security dataset
+- [ ] N3.2 Evaluate base vs fine-tuned on security tasks
+- [ ] N3.3 Serve LoRA adapter:
+  ```bash
+  # Add to recipe or vllm command:
+  --enable-lora --lora-modules security-ops=/path/to/adapter
+  ```
+
+### Key Differences: Nano-30B vs Super-120B
+
+| Aspect | Super-120B (NVFP4) | Nano-30B (FP8) |
+|---|---|---|
+| Weights on disk | ~69.5 GB | ~30 GB |
+| Active params/token | 12B | 3.5B |
+| Quantization | 4-bit (NVFP4) | 8-bit (FP8) |
+| Memory headroom | Tight (128 GB) | Plenty (128 GB) |
+| Expected single-user t/s | ~16-17 | TBD (benchmark) |
+| Quality | Higher (larger active set) | Lower but strong for size |
+| Best for | Quality-critical tasks | High-throughput, lower-latency |
+
+---
+
 ## Key References
 
 | Resource | URL |
@@ -179,3 +298,5 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 | vLLM GB10 support issue | https://github.com/vllm-project/vllm/issues/31128 |
 | NVIDIA forum (NVFP4) | https://forums.developer.nvidia.com/t/nvidia-nemotron-3-super-120b-a12b-nvfp4/363175 |
 | FlashAttention sm_121 | https://github.com/Dao-AILab/flash-attention/issues/1969 |
+| Model (Nano FP8) | https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8 |
+| Model (Nano NVFP4) | https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4 |
