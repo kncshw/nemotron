@@ -84,7 +84,12 @@ docker run --gpus all nvidia/cuda:13.2.0-base-ubuntu24.04 nvidia-smi  # Confirm 
 - [ ] 3.1 Download model: `huggingface-cli download nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4`
 - [ ] 3.2 Launch vLLM via spark-vllm-docker recipe:
   ```bash
+  # Foreground (blocks terminal):
   ./run-recipe.sh nemotron-3-super-nvfp4 --solo --setup
+
+  # Background (non-blocking, logs to file):
+  nohup ./run-recipe.sh nemotron-3-super-nvfp4 --solo --setup > api.log 2>&1 &
+  tail -f api.log   # monitor logs
   ```
 - [ ] 3.3 Verify serving: `curl http://localhost:8000/v1/models`
 - [ ] 3.4 Run API test client from Phase 1
@@ -209,7 +214,12 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 - [ ] N1.2 Launch via spark-vllm-docker recipe:
   ```bash
   cd spark-vllm-docker/
+  # Foreground (blocks terminal):
   ./run-recipe.sh nemotron-3-nano-fp8 --solo --setup
+
+  # Background (non-blocking, logs to file):
+  nohup ./run-recipe.sh nemotron-3-nano-fp8 --solo --setup > api.log 2>&1 &
+  tail -f api.log   # monitor logs
   ```
   Or use the wrapper script:
   ```bash
