@@ -81,7 +81,7 @@ docker run --gpus all nvidia/cuda:13.2.0-base-ubuntu24.04 nvidia-smi  # Confirm 
 
 **Goal:** Serve Nemotron-3-Super-120B-A12B-NVFP4 on one GB10 via vLLM.
 
-- [ ] 3.1 Download model: `huggingface-cli download nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4`
+- [ ] 3.1 Download model: `hf download nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4`
 - [ ] 3.2 Launch vLLM via spark-vllm-docker recipe:
   ```bash
   # Foreground (blocks terminal):
@@ -147,7 +147,7 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 **Goal:** Switch to FP8 for higher quality, using both GB10 nodes.
 
-- [ ] 5.1 Download FP8 model: `huggingface-cli download nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8`
+- [ ] 5.1 Download FP8 model: `hf download nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8`
 - [ ] 5.2 Create FP8 recipe for spark-vllm-docker (based on NVFP4 recipe)
 - [ ] 5.3 Launch in cluster mode with TP=2:
   ```bash
@@ -219,7 +219,7 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 - [ ] N1a.1 Download model:
   ```bash
-  huggingface-cli download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4
+  hf download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4
   ```
 - [ ] N1a.2 Launch via spark-vllm-docker recipe:
   ```bash
@@ -249,7 +249,7 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 - [ ] N1b.1 Download model:
   ```bash
-  huggingface-cli download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
+  hf download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
   ```
 - [ ] N1b.2 Launch via spark-vllm-docker recipe:
   ```bash
