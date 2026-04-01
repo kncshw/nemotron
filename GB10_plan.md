@@ -180,7 +180,7 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 ---
 
-## Nemotron-3-Nano-30B-A3B-FP8 (Second GB10)
+## Nemotron-3-Nano-30B-A3B (Second GB10)
 
 ### Model Overview
 
@@ -189,29 +189,69 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 | Architecture | Mamba2-Transformer Hybrid MoE |
 | Total params | 30B |
 | Active params per token | ~3.5B (~10% of total) |
-| Quantization | FP8 (selective — attention & Mamba layers kept in BF16) |
-| FP8 weights size | ~30 GB |
 | Context length | 256K default (up to 1M) |
 | MoE layers | 23 layers, 128 routed experts + 1 shared per layer, 6 active |
 | Attention layers | 6 (GQA, 2 groups) |
 | Mamba-2 layers | 23 |
 
+### Quantization Variants
+
+| Variant | Weights size | Active bytes/token | Theoretical max t/s | Notes |
+|---|---|---|---|---|
+| **NVFP4 (4-bit)** | ~15 GB | ~1.75 GB | ~156 | Fastest option on GB10 |
+| FP8 (8-bit) | ~30 GB | ~3.5 GB | ~78 | Measured ~46 t/s |
+
+> **GB10 bandwidth bottleneck:** 273 GB/s LPDDR5X unified memory.
+> Formula: `max t/s ≈ 273 / active_weight_GB`
+
 ### GB10 Fit
 
-- FP8 weights (~30 GB) fit easily in 128 GB unified memory
+- Both variants fit easily in 128 GB unified memory
 - Single node, TP=1 — no NVLink needed
-- Higher `gpu_memory_utilization` (0.85) possible due to smaller model
-- More headroom for KV cache → better concurrent performance
+- NVFP4 (~15 GB) leaves the most headroom for KV cache and concurrent batching
+- FP8 (~30 GB) offers slightly better quality at lower speed
 
-### Phase N1 — Deploy Nano-30B FP8
+### Phase N1 — Deploy Nano-30B
 
-**Goal:** Serve Nemotron-3-Nano-30B-A3B-FP8 on the second GB10.
+#### Option A: NVFP4 (recommended for speed)
 
-- [ ] N1.1 Download model:
+**Goal:** Serve Nemotron-3-Nano-30B-A3B-NVFP4 for maximum throughput.
+
+- [ ] N1a.1 Download model:
+  ```bash
+  huggingface-cli download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4
+  ```
+- [ ] N1a.2 Launch via spark-vllm-docker recipe:
+  ```bash
+  cd spark-vllm-docker/
+  # Foreground:
+  ./run-recipe.sh nemotron-3-nano-nvfp4 --solo --setup
+
+  # Background (non-blocking, logs to file):
+  nohup ./run-recipe.sh nemotron-3-nano-nvfp4 --solo --setup > api.log 2>&1 &
+  tail -f api.log
+  ```
+  Or use the wrapper script:
+  ```bash
+  ./scripts/serve_nano30b_nvfp4.sh --setup
+  ```
+- [ ] N1a.3 Verify serving: `curl http://localhost:8000/v1/models`
+- [ ] N1a.4 Run API tests:
+  ```bash
+  python3 scripts/test_api.py --all --base-url http://<nano-gb10-ip>:8000/v1
+  ```
+
+**Recipe:** `spark-vllm-docker/recipes/nemotron-3-nano-nvfp4.yaml`
+
+#### Option B: FP8 (higher quality)
+
+**Goal:** Serve Nemotron-3-Nano-30B-A3B-FP8 for higher quality.
+
+- [ ] N1b.1 Download model:
   ```bash
   huggingface-cli download nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
   ```
-- [ ] N1.2 Launch via spark-vllm-docker recipe:
+- [ ] N1b.2 Launch via spark-vllm-docker recipe:
   ```bash
   cd spark-vllm-docker/
   # Foreground (blocks terminal):
@@ -225,8 +265,8 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
   ```bash
   ./scripts/serve_nano30b.sh --setup
   ```
-- [ ] N1.3 Verify serving: `curl http://localhost:8000/v1/models`
-- [ ] N1.4 Run API tests:
+- [ ] N1b.3 Verify serving: `curl http://localhost:8000/v1/models`
+- [ ] N1b.4 Run API tests:
   ```bash
   python3 scripts/test_api.py --all --base-url http://<nano-gb10-ip>:8000/v1
   ```
@@ -235,8 +275,10 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
 
 **vLLM command (from recipe):**
 ```bash
+# Env vars required for FP8 MoE (CUTLASS FP8 MoE disabled for ModelOpt quant):
+# VLLM_USE_FLASHINFER_MOE_FP8=1
+# VLLM_FLASHINFER_MOE_BACKEND=latency
 vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8 \
-  --moe-backend cutlass \
   --kv-cache-dtype fp8 \
   --trust-remote-code \
   --enable-auto-tool-choice \
@@ -245,8 +287,9 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8 \
   --reasoning-parser nano_v3 \
   --enable-prefix-caching \
   --load-format fastsafetensors \
-  --gpu-memory-utilization 0.85 \
+  --gpu-memory-utilization 0.75 \
   --max-model-len 262144 \
+  --max-num-seqs 8 \
   --host 0.0.0.0 --port 8000
 ```
 
@@ -284,17 +327,19 @@ vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8 \
   --enable-lora --lora-modules security-ops=/path/to/adapter
   ```
 
-### Key Differences: Nano-30B vs Super-120B
+### Key Differences: All Models on GB10
 
-| Aspect | Super-120B (NVFP4) | Nano-30B (FP8) |
-|---|---|---|
-| Weights on disk | ~69.5 GB | ~30 GB |
-| Active params/token | 12B | 3.5B |
-| Quantization | 4-bit (NVFP4) | 8-bit (FP8) |
-| Memory headroom | Tight (128 GB) | Plenty (128 GB) |
-| Expected single-user t/s | ~16-17 | TBD (benchmark) |
-| Quality | Higher (larger active set) | Lower but strong for size |
-| Best for | Quality-critical tasks | High-throughput, lower-latency |
+| Aspect | Super-120B (NVFP4) | Nano-30B (FP8) | Nano-30B (NVFP4) |
+|---|---|---|---|
+| Weights on disk | ~69.5 GB | ~30 GB | ~15 GB |
+| Active params/token | 12B | 3.5B | 3.5B |
+| Quantization | 4-bit | 8-bit | 4-bit |
+| Active bytes/token | ~6 GB | ~3.5 GB | ~1.75 GB |
+| Theoretical max t/s | ~45 | ~78 | ~156 |
+| Measured single-user t/s | ~16-17 | ~46 | TBD |
+| Memory headroom | Tight (128 GB) | Plenty | Most headroom |
+| Quality | Highest (larger active set) | Good | Slightly lower |
+| Best for | Quality-critical tasks | Balance of speed/quality | Max throughput |
 
 ---
 
