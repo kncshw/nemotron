@@ -1,0 +1,49 @@
+# Recipe: Nemotron-3-Super-NVFP4 (fast TTFT)
+# Optimized for lower time-to-first-token by reducing context and
+# freeing memory for faster prefill. Trades context length for speed.
+#
+# Usage:
+#   ./run-recipe.sh nemotron-3-super-nvfp4-fast --solo --setup
+
+recipe_version: "1"
+name: Nemotron-3-Super-NVFP4-Fast-TTFT
+description: vLLM serving Nemotron-3-Super-120B optimized for fast TTFT
+
+model: nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4
+container: vllm-node
+cluster_only: false
+solo_only: false
+
+mods:
+  - mods/nemotron-super
+
+container: vllm-node
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 2
+  gpu_memory_utilization: 0.85
+  max_model_len: 32768
+  max_num_seqs: 8
+
+command: |
+  vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
+  --kv-cache-dtype fp8 \
+  --moe-backend cutlass \
+  --trust-remote-code \
+  --gpu-memory-utilization {gpu_memory_utilization} \
+  --max-model-len {max_model_len} \
+  --max-num-seqs {max_num_seqs} \
+  --enable-prefix-caching \
+  --enable-chunked-prefill \
+  --max-num-batched-tokens {max_model_len} \
+  --num-scheduler-steps 8 \
+  --host {host} \
+  --port {port} \
+  --enable-auto-tool-choice \
+  --load-format fastsafetensors \
+  --tool-call-parser qwen3_coder \
+  --reasoning-parser-plugin super_v3_reasoning_parser.py \
+  --reasoning-parser super_v3 \
+  --tensor-parallel-size {tensor_parallel} \
+  --distributed-executor-backend ray
