@@ -1,12 +1,13 @@
-# Recipe: Nemotron-3-Super-NVFP4 (default)
-# CUTLASS backend — proven stable on GB10 at ~16-17 t/s
+# Recipe: Nemotron-3-Super-NVFP4
+# Optimized for GB10 (sm_121) using FlashInfer FP4 MoE
 #
-# Usage:
-#   ./run-recipe.sh nemotron-3-super-nvfp4 --solo --setup
+# NOTE: CUTLASS NVFP4 MoE kernels use tcgen05 instructions unsupported on sm_121,
+# causing degraded fallback (~16-17 t/s). FlashInfer FP4 MoE avoids this.
+# See: https://forums.developer.nvidia.com/t/dgx-spark-nemotron3-and-nvfp4-getting-to-65-tps/355261
 
 recipe_version: "1"
-name: Nemotron-3-Super-NVFP4
-description: vLLM serving Nemotron-3-Super-120B using CUTLASS kernels
+name: Nemotron-3-Super-NVFP4-FlashInfer-Optimized
+description: vLLM serving Nemotron-3-Super-120B using FlashInfer FP4 MoE
 
 model: nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4
 container: vllm-node
@@ -17,6 +18,12 @@ mods:
   - mods/nemotron-super
 
 container: vllm-node
+
+# FlashInfer FP4 MoE — avoids broken CUTLASS tcgen05 kernels on sm_121
+env:
+  VLLM_USE_FLASHINFER_MOE_FP4: "1"
+  VLLM_FLASHINFER_MOE_BACKEND: "latency"
+
 defaults:
   port: 8000
   host: 0.0.0.0
@@ -27,8 +34,8 @@ defaults:
 
 command: |
   vllm serve nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4 \
+  --quantization modelopt_fp4 \
   --kv-cache-dtype fp8 \
-  --moe-backend cutlass \
   --trust-remote-code \
   --gpu-memory-utilization {gpu_memory_utilization} \
   --max-model-len {max_model_len} \
