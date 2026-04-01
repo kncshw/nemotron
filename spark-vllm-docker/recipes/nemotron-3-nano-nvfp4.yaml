@@ -1,6 +1,10 @@
 # Recipe: Nemotron-3-Nano-NVFP4
 # Nemotron-3-Nano model with NVFP4 quantization support
 # Currently can only be run in solo mode, cluster mode fails with error
+#
+# NOTE: CUTLASS NVFP4 MoE kernels use tcgen05 instructions unsupported on sm_121.
+# Use Marlin backend instead (~50 t/s vs ~20 t/s with CUTLASS on GB10).
+# See: https://forums.developer.nvidia.com/t/marlin-fix-nvfp4-actually-works-on-sm121-dgx-spark/365119
 
 recipe_version: "1"
 name: Nemotron-3-Nano-NVFP4
@@ -16,21 +20,27 @@ container: vllm-node
 solo_only: true
 
 # No mods required
-mods: 
+mods:
   - mods/nemotron-nano
+
+# Environment variables
+# Marlin dequantizes FP4->BF16 on-the-fly, avoids broken tcgen05 kernels on sm_121
+env:
+  VLLM_NVFP4_GEMM_BACKEND: "marlin"
+  VLLM_TEST_FORCE_FP8_MARLIN: "1"
 
 # Default settings (can be overridden via CLI)
 defaults:
   port: 8000
   host: 0.0.0.0
   tensor_parallel: 1
-  gpu_memory_utilization: 0.7
+  gpu_memory_utilization: 0.85
   max_model_len: 262144
 
 # The vLLM serve command template
 command: |
   vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4  \
-     --moe-backend cutlass \
+     --moe-backend marlin \
      --max-model-len {max_model_len} \
      --port {port} --host {host} \
      --trust-remote-code \
