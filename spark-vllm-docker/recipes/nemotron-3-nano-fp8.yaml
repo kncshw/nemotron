@@ -1,47 +1,34 @@
-# Recipe: Nemotron-3-Nano-FP8
-# Nemotron-3-Nano-30B with FP8 quantization (~30 GB weights)
-# 30B total params, ~3.5B active per token (MoE)
-# Solo mode only (fits easily on single GB10)
+# Recipe: Nemotron-3-Nano-FP8 (conservative fallback)
+# Proven stable at ~46 t/s on GB10. Use this if the optimized recipe fails.
 #
-# NOTE: CUTLASS FP8 MoE is hardcoded disabled in vLLM for ModelOpt quant.
-# Use FlashInfer FP8 MoE (latency backend) instead.
-# See: https://github.com/vllm-project/vllm/issues/32109
+# Usage:
+#   ./run-recipe.sh nemotron-3-nano-fp8-conservative --solo --setup
 
 recipe_version: "1"
-name: Nemotron-3-Nano-FP8
-description: vLLM serving Nemotron-3-Nano-30B-A3B-FP8 on a SINGLE NODE
+name: Nemotron-3-Nano-FP8-Conservative
+description: vLLM serving Nemotron-3-Nano-30B-A3B-FP8 (conservative, proven stable)
 
-# HuggingFace model to download (optional, for --download-model)
 model: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
 
-# Container image to use
 container: vllm-node
 
-# Single node only
 solo_only: true
 
-# Same mod as NVFP4 — downloads the nano_v3 reasoning parser
 mods:
   - mods/nemotron-nano
 
-# Environment variables
-# - FlashInfer FP8 MoE required (CUTLASS FP8 MoE disabled for ModelOpt quant)
-# - Use "latency" backend on sm_121 ("throughput" has kernel issues on GB10)
 env:
   VLLM_USE_FLASHINFER_MOE_FP8: "1"
   VLLM_FLASHINFER_MOE_BACKEND: "latency"
 
-# Default settings (can be overridden via CLI)
 defaults:
   port: 8000
   host: 0.0.0.0
   tensor_parallel: 1
-  gpu_memory_utilization: 0.9
-  max_model_len: 131072
-  max_num_seqs: 16
+  gpu_memory_utilization: 0.75
+  max_model_len: 262144
+  max_num_seqs: 8
 
-# The vLLM serve command template
-# NOTE: No --moe-backend flag — let vLLM auto-select (FlashInfer via env vars above)
 command: |
   vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8  \
      --max-model-len {max_model_len} \
