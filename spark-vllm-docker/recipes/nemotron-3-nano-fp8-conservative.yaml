@@ -1,0 +1,45 @@
+# Recipe: Nemotron-3-Nano-FP8 (conservative fallback)
+# Proven stable at ~46 t/s on GB10. Use this if the optimized recipe fails.
+#
+# Usage:
+#   ./run-recipe.sh nemotron-3-nano-fp8-conservative --solo --setup
+
+recipe_version: "1"
+name: Nemotron-3-Nano-FP8-Conservative
+description: vLLM serving Nemotron-3-Nano-30B-A3B-FP8 (conservative, proven stable)
+
+model: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8
+
+container: vllm-node
+
+solo_only: true
+
+mods:
+  - mods/nemotron-nano
+
+env:
+  VLLM_USE_FLASHINFER_MOE_FP8: "1"
+  VLLM_FLASHINFER_MOE_BACKEND: "latency"
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.75
+  max_model_len: 262144
+  max_num_seqs: 8
+
+command: |
+  vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8  \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-auto-tool-choice  \
+     --tool-call-parser qwen3_coder \
+     --reasoning-parser-plugin nano_v3_reasoning_parser.py \
+     --reasoning-parser nano_v3  \
+     --kv-cache-dtype fp8  \
+     --enable-prefix-caching  \
+     --load-format fastsafetensors  \
+     --gpu-memory-utilization {gpu_memory_utilization}
