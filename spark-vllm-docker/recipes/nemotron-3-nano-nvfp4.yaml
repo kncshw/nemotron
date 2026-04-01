@@ -24,24 +24,30 @@ mods:
   - mods/nemotron-nano
 
 # Environment variables
-# Marlin dequantizes FP4->BF16 on-the-fly, avoids broken tcgen05 kernels on sm_121
+# FlashInfer FP4 MoE is the fastest path on sm_121 (~67 t/s reported)
 env:
-  VLLM_NVFP4_GEMM_BACKEND: "marlin"
-  VLLM_TEST_FORCE_FP8_MARLIN: "1"
+  VLLM_USE_FLASHINFER_MOE_FP4: "1"
+  VLLM_FLASHINFER_MOE_BACKEND: "latency"
 
 # Default settings (can be overridden via CLI)
 defaults:
   port: 8000
   host: 0.0.0.0
   tensor_parallel: 1
-  gpu_memory_utilization: 0.85
-  max_model_len: 262144
+  gpu_memory_utilization: 0.9
+  max_model_len: 131072
+  max_num_seqs: 16
 
 # The vLLM serve command template
+# - No --moe-backend flag: auto-selects FlashInfer via env vars
+# - Shorter context (131K) to maximize KV cache for batching
+# - Higher gpu_memory_utilization (0.9) since model is only ~15 GB
+# - quantization flag explicitly set for optimal FP4 path
 command: |
   vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4  \
-     --moe-backend marlin \
+     --quantization modelopt_fp4 \
      --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
      --port {port} --host {host} \
      --trust-remote-code \
      --enable-auto-tool-choice  \
