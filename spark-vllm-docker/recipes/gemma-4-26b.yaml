@@ -32,7 +32,7 @@ defaults:
 command: |
   pip install --upgrade huggingface_hub && \
   pip install --no-deps --upgrade transformers && \
-  pip install https://wheels.vllm.ai/nightly/cu130/vllm/vllm-0.18.2rc1.dev72%2Bgbb39382b2.cu130-cp38-abi3-manylinux_2_35_aarch64.whl && \
+  pip install https://wheels.vllm.ai/bb39382b2b28b0571054fee4a266b96d7e33ab58/vllm-0.18.2rc1.dev72%2Bgbb39382b2.cu130-cp38-abi3-manylinux_2_35_aarch64.whl && \
   vllm serve google/gemma-4-26B-A4B-it \
      --max-model-len {max_model_len} \
      --max-num-seqs {max_num_seqs} \
