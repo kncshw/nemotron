@@ -31,7 +31,7 @@ defaults:
 
 command: |
   pip install --upgrade transformers huggingface_hub && \
-  sed -i 's/if sub_config.dtype != (dtype := self.config.dtype):/if sub_config is not None and sub_config.dtype != (dtype := self.config.dtype):/' $(python -c "import vllm.model_executor.models.transformers.base as b; import inspect; print(inspect.getsourcefile(b))") && \
+  pip install "vllm>=0.18.2rc1" --pre --extra-index-url https://wheels.vllm.ai/nightly/vllm/ && \
   vllm serve google/gemma-4-26B-A4B-it \
      --max-model-len {max_model_len} \
      --max-num-seqs {max_num_seqs} \
