@@ -30,9 +30,10 @@ defaults:
   max_num_seqs: 8
 
 command: |
-  pip install --no-deps https://wheels.vllm.ai/bb39382b2b28b0571054fee4a266b96d7e33ab58/vllm-0.18.2rc1.dev72%2Bgbb39382b2.cu130-cp38-abi3-manylinux_2_35_aarch64.whl && \
   pip install --upgrade huggingface_hub && \
   pip install --no-deps --upgrade transformers && \
+  sed -i 's/if sub_config.dtype != (dtype := self.config.dtype):/if sub_config is not None and sub_config.dtype != (dtype := self.config.dtype):/' $(python3 -c "import vllm.model_executor.models.transformers.base as b; import inspect; print(inspect.getsourcefile(b))") && \
+  sed -i 's/assert top_k is not None/top_k = top_k if top_k is not None else getattr(moe_config, "num_experts_per_tok", getattr(moe_config, "num_selected_experts", 8))/' $(python3 -c "import vllm.model_executor.models.transformers.moe as m; import inspect; print(inspect.getsourcefile(m))") && \
   vllm serve google/gemma-4-26B-A4B-it \
      --max-model-len {max_model_len} \
      --max-num-seqs {max_num_seqs} \
