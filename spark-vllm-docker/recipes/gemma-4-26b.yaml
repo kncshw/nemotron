@@ -1,0 +1,39 @@
+# Recipe: Gemma-4-26B-A4B-it
+# BF16 model (~52 GB) — fits on single GB10 (128 GB unified memory)
+# MoE: 128 experts, 8 active + 1 shared (3.8B active params)
+# Supports text + vision, 256K context
+# Requires vLLM >= 0.8.5
+#
+# Usage:
+#   ./run-recipe.sh gemma-4-26b --solo --setup
+
+recipe_version: "1"
+name: Gemma-4-26B-A4B-it
+description: vLLM serving Gemma-4-26B-A4B-it (BF16, MoE text+vision)
+
+model: google/gemma-4-26B-A4B-it
+
+container: vllm-node
+
+solo_only: true
+
+mods: []
+
+env: {}
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.9
+  max_model_len: 262144
+  max_num_seqs: 8
+
+command: |
+  vllm serve google/gemma-4-26B-A4B-it \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-prefix-caching \
+     --gpu-memory-utilization {gpu_memory_utilization}
