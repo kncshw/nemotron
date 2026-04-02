@@ -32,7 +32,7 @@ defaults:
 command: |
   pip install --no-deps --upgrade transformers && \
   pip install --upgrade huggingface_hub && \
-  sed -i 's/if sub_config.dtype != (dtype := self.config.dtype):/if sub_config is not None and sub_config.dtype != (dtype := self.config.dtype):/' $(python -c "import vllm.model_executor.models.transformers.base as b; import inspect; print(inspect.getsourcefile(b))") && \
+  sed -i 's/if sub_config.dtype != (dtype := self.config.dtype):/if sub_config is not None and sub_config.dtype != (dtype := self.config.dtype):/' $(python3 -c "import vllm.model_executor.models.transformers.base as b; import inspect; print(inspect.getsourcefile(b))") && \
   vllm serve google/gemma-4-26B-A4B-it \
      --max-model-len {max_model_len} \
      --max-num-seqs {max_num_seqs} \
