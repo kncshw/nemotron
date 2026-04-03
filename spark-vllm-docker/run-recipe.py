@@ -85,8 +85,9 @@ RELATED FILES:
 
 import argparse
 import os
-import subprocess
 import shlex
+import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -1148,7 +1149,6 @@ Examples:
             sys.exit(1)
         hf_cache = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
         dst = hf_cache / chat_template
-        import shutil
         shutil.copy2(src, dst)
         print(f"Chat template copied to {dst}")
 
