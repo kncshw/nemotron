@@ -1,7 +1,11 @@
 # Recipe: Nemotron-Cascade-2-30B-A3B
 # BF16 model (~63 GB) — fits on single GB10 (128 GB unified memory)
 # Supports thinking mode (<think> tags) and instruct mode
+# Uses patched chat template to enable parallel tool calls
 # Requires vLLM >= 0.17.1
+#
+# Setup (once):
+#   cp recipes/nemotron-cascade-2-chat-template.jinja ~/.cache/huggingface/
 #
 # Usage:
 #   ./run-recipe.sh nemotron-cascade-2 --solo --setup
@@ -41,4 +45,4 @@ command: |
      --enable-prefix-caching \
      --load-format fastsafetensors \
      --gpu-memory-utilization {gpu_memory_utilization} \
-     --chat-template recipes/nemotron-cascade-2-chat-template.jinja
+     --chat-template /root/.cache/huggingface/nemotron-cascade-2-chat-template.jinja
