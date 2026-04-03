@@ -41,4 +41,4 @@ command: |
      --enable-prefix-caching \
      --load-format fastsafetensors \
      --gpu-memory-utilization {gpu_memory_utilization} \
-     --override-generation-config '{{"stop_token_ids": [11]}}'
+     --chat-template recipes/nemotron-cascade-2-chat-template.jinja
