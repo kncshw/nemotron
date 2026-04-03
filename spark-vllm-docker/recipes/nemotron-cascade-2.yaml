@@ -40,4 +40,5 @@ command: |
      --mamba-ssm-cache-dtype float32 \
      --enable-prefix-caching \
      --load-format fastsafetensors \
-     --gpu-memory-utilization {gpu_memory_utilization}
+     --gpu-memory-utilization {gpu_memory_utilization} \
+     --override-generation-config '{"stop_token_ids": [11]}'
