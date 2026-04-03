@@ -133,6 +133,7 @@ def load_recipe(recipe_path: Path) -> dict[str, Any]:
         defaults (dict, optional): Default values for command placeholders
         env (dict, optional): Environment variables to export before running
         build_args (list[str], optional): Extra args for build-and-copy.sh (e.g., ['-f', 'Dockerfile.mxfp4'])
+        chat_template (str, optional): Jinja file in recipes/ dir, auto-copied to HF cache for container access
         cluster_only (bool, optional): If True, recipe cannot run in solo mode
         solo_only (bool, optional): If True, recipe cannot run in cluster mode
     
@@ -1138,6 +1139,19 @@ Examples:
                     print(f"Warning: '{arg}' in extra args duplicates --{override_key.replace('_', '-')} override")
                     print(f"         vLLM uses last value; extra args appear after template substitution")
     
+    # Copy chat template to HF cache if specified in recipe
+    chat_template = recipe.get("chat_template")
+    if chat_template:
+        src = RECIPES_DIR / chat_template
+        if not src.exists():
+            print(f"Error: Chat template not found: {src}")
+            sys.exit(1)
+        hf_cache = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
+        dst = hf_cache / chat_template
+        import shutil
+        shutil.copy2(src, dst)
+        print(f"Chat template copied to {dst}")
+
     # Generate launch script
     script_content = generate_launch_script(recipe, overrides, is_solo=is_solo, extra_args=extra_args, no_ray=getattr(args, 'no_ray', False))
     

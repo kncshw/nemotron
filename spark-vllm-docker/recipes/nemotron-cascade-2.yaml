@@ -4,9 +4,6 @@
 # Uses patched chat template to enable parallel tool calls
 # Requires vLLM >= 0.17.1
 #
-# Setup (once):
-#   cp recipes/nemotron-cascade-2-chat-template.jinja ~/.cache/huggingface/
-#
 # Usage:
 #   ./run-recipe.sh nemotron-cascade-2 --solo --setup
 
@@ -31,6 +28,8 @@ defaults:
   gpu_memory_utilization: 0.9
   max_model_len: 131072
   max_num_seqs: 8
+
+chat_template: nemotron-cascade-2-chat-template.jinja
 
 command: |
   vllm serve nvidia/Nemotron-Cascade-2-30B-A3B \
