@@ -3,7 +3,7 @@
 # MoE: 128 experts, 8 active + 1 shared (3.8B active params)
 # Supports text + vision, 256K context
 # Uses Google's BF16 weights with vLLM on-the-fly FP8 quantization
-# Requires container: vllm-gemma4 (built with --pre-transformers --vllm-ref main)
+# Requires container: vllm-node-tf5 (upstream spark-vllm-docker with transformers 5.x)
 #
 # Usage:
 #   ./run-recipe.sh gemma-4-26b-fp8 --solo --setup
@@ -14,7 +14,7 @@ description: vLLM serving Gemma-4-26B-A4B-it (FP8 on-the-fly, MoE text+vision, t
 
 model: google/gemma-4-26B-A4B-it
 
-container: vllm-gemma4
+container: vllm-node-tf5
 
 solo_only: true
 
