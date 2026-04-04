@@ -1,0 +1,43 @@
+# Recipe: Gemma-4-26B-A4B-it (FP8)
+# FP8 on-the-fly (~26 GB) — fits on single GB10 (128 GB unified memory)
+# MoE: 128 experts, 8 active + 1 shared (3.8B active params)
+# Supports text + vision, 256K context
+# Uses Google's BF16 weights with vLLM on-the-fly FP8 quantization
+# Requires container: vllm-gemma4 (built with --pre-transformers --vllm-ref main)
+#
+# Usage:
+#   ./run-recipe.sh gemma-4-26b-fp8 --solo --setup
+
+recipe_version: "1"
+name: Gemma-4-26B-A4B-it-FP8
+description: vLLM serving Gemma-4-26B-A4B-it (FP8 on-the-fly, MoE text+vision, tool calling)
+
+model: google/gemma-4-26B-A4B-it
+
+container: vllm-gemma4
+
+solo_only: true
+
+mods: []
+
+env: {}
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.9
+  max_model_len: 262144
+  max_num_seqs: 8
+
+command: |
+  vllm serve google/gemma-4-26B-A4B-it \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-prefix-caching \
+     --gpu-memory-utilization {gpu_memory_utilization} \
+     --quantization fp8 --kv-cache-dtype fp8 \
+     --reasoning-parser gemma4 \
+     --enable-auto-tool-choice --tool-call-parser gemma4
