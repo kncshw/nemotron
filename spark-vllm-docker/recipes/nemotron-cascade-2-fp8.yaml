@@ -1,5 +1,9 @@
 # Recipe: Nemotron-Cascade-2-30B-A3B (FP8)
-# EXPERIMENTAL: FP8 on-the-fly — Mamba layers may be sensitive to quantization
+# STATUS: BROKEN — vLLM 0.19.x on-the-fly FP8 fails with MoE weight shape
+#   mismatch (AssertionError in fused_moe/layer.py _load_w13).
+#   NemotronH MoE architecture not yet compatible with FP8 quantization path.
+#   Tested 2026-04-04. Use BF16 recipe instead.
+#
 # MoE hybrid Mamba-Transformer, 30B total / 3B active params
 # Supports thinking mode (<think> tags) and instruct mode
 # Uses patched chat template to enable parallel tool calls
