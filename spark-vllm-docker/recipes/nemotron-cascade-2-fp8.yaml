@@ -14,7 +14,7 @@ description: vLLM serving Nemotron-Cascade-2-30B-A3B (FP8 on-the-fly, EXPERIMENT
 
 model: nvidia/Nemotron-Cascade-2-30B-A3B
 
-container: vllm-node
+container: vllm-node-tf5
 
 solo_only: true
 
