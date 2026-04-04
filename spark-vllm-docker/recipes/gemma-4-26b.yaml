@@ -1,5 +1,5 @@
 # Recipe: Gemma-4-26B-A4B-it
-# BF16 model (~52 GB) — fits on single GB10 (128 GB unified memory)
+# FP8 on-the-fly (~26 GB) — fits on single GB10 (128 GB unified memory)
 # MoE: 128 experts, 8 active + 1 shared (3.8B active params)
 # Supports text + vision, 256K context
 # Requires container: vllm-gemma4 (built with --pre-transformers --vllm-ref main)
@@ -9,7 +9,7 @@
 
 recipe_version: "1"
 name: Gemma-4-26B-A4B-it
-description: vLLM serving Gemma-4-26B-A4B-it (BF16, MoE text+vision, tool calling)
+description: vLLM serving Gemma-4-26B-A4B-it (FP8, MoE text+vision, tool calling)
 
 model: google/gemma-4-26B-A4B-it
 
@@ -37,4 +37,6 @@ command: |
      --trust-remote-code \
      --enable-prefix-caching \
      --gpu-memory-utilization {gpu_memory_utilization} \
+     --quantization fp8 --kv-cache-dtype fp8 \
+     --reasoning-parser gemma4 \
      --enable-auto-tool-choice --tool-call-parser gemma4
