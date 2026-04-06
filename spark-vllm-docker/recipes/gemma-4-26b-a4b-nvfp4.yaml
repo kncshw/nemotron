@@ -1,0 +1,55 @@
+# Recipe: Gemma-4-26B-A4B-it (NVFP4)
+# Community NVFP4 (W4A4) quantization (~16.5 GB) — fits easily on single GB10
+# MoE: 128 experts, 8 active + 1 shared (3.8B active params)
+# Supports text + vision, 256K context
+# Source: bg-digitalservices/Gemma-4-26B-A4B-it-NVFP4 (Apache 2.0, community)
+# Quantized with NVIDIA Model Optimizer v0.43, vision encoder kept BF16
+# Requires container: vllm-node-tf5 (SM 12.1, transformers 5.x, marlin MoE backend)
+#
+# WARNING: community release. Requires --trust-remote-code AND a third-party
+# patch file (gemma4_patched.py from the HF repo) to fix NVFP4 scale-key loading.
+# Read/diff the patch before mounting it into the container.
+#
+# Quality vs BF16 (per model card): IFEval ~98.7% retained, GSM8K ~95.9% retained
+# Throughput claim: ~2x BF16 (23.3 -> 48.2 tok/s on GB10)
+#
+# Usage:
+#   ./run-recipe.sh gemma-4-26b-a4b-nvfp4 --solo --setup
+
+recipe_version: "1"
+name: Gemma-4-26B-A4B-it-NVFP4
+description: vLLM serving Gemma-4-26B-A4B-it (NVFP4 W4A4, MoE text+vision, tool calling)
+
+model: bg-digitalservices/Gemma-4-26B-A4B-it-NVFP4
+
+container: vllm-node-tf5
+
+solo_only: true
+
+mods: []
+
+env:
+  VLLM_NVFP4_GEMM_BACKEND: marlin
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.9
+  max_model_len: 262144
+  max_num_seqs: 8
+
+command: |
+  vllm serve bg-digitalservices/Gemma-4-26B-A4B-it-NVFP4 \
+     --served-model-name gemma-4 \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-prefix-caching \
+     --gpu-memory-utilization {gpu_memory_utilization} \
+     --quantization modelopt \
+     --moe-backend marlin \
+     --kv-cache-dtype fp8 \
+     --reasoning-parser gemma4 \
+     --enable-auto-tool-choice --tool-call-parser gemma4
