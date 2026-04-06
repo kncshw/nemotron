@@ -6,9 +6,10 @@
 # Quantized with NVIDIA Model Optimizer v0.43, vision encoder kept BF16
 # Requires container: vllm-node-tf5 (SM 12.1, transformers 5.x, marlin MoE backend)
 #
-# WARNING: community release. Requires --trust-remote-code AND a third-party
-# patch file (gemma4_patched.py from the HF repo) to fix NVFP4 scale-key loading.
-# Read/diff the patch before mounting it into the container.
+# WARNING: community release. Requires the fix-gemma4-nvfp4 mod, which
+# replaces vLLM's stock gemma4.py with the publisher's NVFP4-aware version
+# (the stock loader crashes with KeyError on layers.N.moe.experts.M.* keys).
+# The mod's gemma4_patched.py is shipped in this repo — review it before use.
 #
 # Quality vs BF16 (per model card): IFEval ~98.7% retained, GSM8K ~95.9% retained
 # Throughput claim: ~2x BF16 (23.3 -> 48.2 tok/s on GB10)
@@ -26,7 +27,8 @@ container: vllm-node-tf5
 
 solo_only: true
 
-mods: []
+mods:
+  - mods/fix-gemma4-nvfp4
 
 env:
   VLLM_NVFP4_GEMM_BACKEND: marlin
