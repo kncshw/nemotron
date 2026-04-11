@@ -1,0 +1,49 @@
+# Recipe: Gemma-4-31B-IT (NVFP4)
+# Official NVIDIA NVFP4 quantization of the dense 31B Gemma-4
+# Dense: 30.7B params (all active per token — expect ~7 tok/s decode on GB10)
+# Supports text + vision, 256K context
+# Source: nvidia/Gemma-4-31B-IT-NVFP4 (NVIDIA Open Model License)
+# Works with stock vLLM — no mod or patch required
+# Requires container: vllm-node-tf5 (SM 12.1, transformers 5.x)
+#
+# Quality vs BF16: <0.5pp drop across GPQA/AIME/MMLU Pro/LiveCodeBench
+# Throughput: ~6.9 tok/s decode @ concurrency 1 on GB10 (~2x BF16)
+#
+# Usage:
+#   ./run-recipe.sh gemma-4-31b-it-nvfp4 --solo --setup
+
+recipe_version: "1"
+name: Gemma-4-31B-IT-NVFP4
+description: vLLM serving Gemma-4-31B-IT (NVFP4, dense text+vision, tool calling)
+
+model: nvidia/Gemma-4-31B-IT-NVFP4
+
+container: vllm-node-tf5
+
+solo_only: true
+
+mods: []
+
+env: {}
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.9
+  max_model_len: 131072
+  max_num_seqs: 4
+
+command: |
+  vllm serve nvidia/Gemma-4-31B-IT-NVFP4 \
+     --served-model-name gemma-4-31b \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-prefix-caching \
+     --gpu-memory-utilization {gpu_memory_utilization} \
+     --quantization modelopt \
+     --kv-cache-dtype fp8 \
+     --reasoning-parser gemma4 \
+     --enable-auto-tool-choice --tool-call-parser gemma4
