@@ -1,3 +1,7 @@
+# BROKEN — model loads but generates empty output. The fix-gemma4-nvfp4
+# mod (written for NVFP4/modelopt) mis-handles compressed_tensors FP8
+# weights. Use gemma-4-26b-fp8.yaml (on-the-fly FP8) instead.
+#
 # Recipe: Gemma-4-26B-A4B-it FP8-Dynamic (Red Hat AI)
 # Pre-quantized FP8 (W8A8, FP8_E4M3) via llm-compressor (~26 GB)
 # MoE: 128 experts, 8 active + 1 shared (3.8B active params)
