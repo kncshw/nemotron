@@ -1,0 +1,48 @@
+# Recipe: Gemma-4-26B-A4B-it FP8-Dynamic (Red Hat AI)
+# Pre-quantized FP8 (W8A8, FP8_E4M3) via llm-compressor (~26 GB)
+# MoE: 128 experts, 8 active + 1 shared (3.8B active params)
+# Supports text + vision, 256K context
+# Source: RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic (Apache 2.0)
+# Stock vLLM — no mod, no patch, no --quantization flag needed
+# Faster cold start vs on-the-fly FP8 (weights already quantized on disk)
+#
+# Quality vs BF16: GSM8K -0.33%, essentially lossless
+# Throughput: same as on-the-fly FP8 (~24-30 tok/s on GB10)
+#
+# Usage:
+#   ./run-recipe.sh gemma-4-26b-a4b-fp8-redhat --solo --setup
+
+recipe_version: "1"
+name: Gemma-4-26B-A4B-it-FP8-Dynamic-RedHat
+description: vLLM serving Gemma-4-26B-A4B-it (pre-quantized FP8, MoE text+vision, tool calling)
+
+model: RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic
+
+container: vllm-node-tf5
+
+solo_only: true
+
+mods: []
+
+env: {}
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.9
+  max_model_len: 262144
+  max_num_seqs: 8
+
+command: |
+  vllm serve RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic \
+     --served-model-name gemma-4 \
+     --max-model-len {max_model_len} \
+     --max-num-seqs {max_num_seqs} \
+     --port {port} --host {host} \
+     --trust-remote-code \
+     --enable-prefix-caching \
+     --gpu-memory-utilization {gpu_memory_utilization} \
+     --kv-cache-dtype fp8 \
+     --reasoning-parser gemma4 \
+     --enable-auto-tool-choice --tool-call-parser gemma4
