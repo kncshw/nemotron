@@ -3,7 +3,8 @@
 # MoE: 128 experts, 8 active + 1 shared (3.8B active params)
 # Supports text + vision, 256K context
 # Source: RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic (Apache 2.0)
-# Stock vLLM — no mod, no patch, no --quantization flag needed
+# Requires fix-gemma4-nvfp4 mod — llm-compressor unfuses expert tensors
+# into per-expert weights that stock vLLM's gemma4.py doesn't recognize
 # Faster cold start vs on-the-fly FP8 (weights already quantized on disk)
 #
 # Quality vs BF16: GSM8K -0.33%, essentially lossless
@@ -22,7 +23,8 @@ container: vllm-node-tf5
 
 solo_only: true
 
-mods: []
+mods:
+  - mods/fix-gemma4-nvfp4
 
 env: {}
 
