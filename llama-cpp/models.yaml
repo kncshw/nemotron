@@ -1,0 +1,23 @@
+# GGUF models for llama.cpp on GB10
+#
+# Format:
+#   name:
+#     repo: HuggingFace repo ID
+#     file: GGUF filename to download
+#     description: one-line summary
+#     ctx_size: recommended context size
+#     gpu_layers: number of layers to offload to GPU (-1 = all)
+
+bugtrace-apex:
+  repo: BugTraceAI/BugTraceAI-Apex-G4-26B-Q4
+  file: BugTraceAI-Apex-G4-26B-Q4.gguf
+  description: "Gemma-4-26B MoE Q4_K_M — offensive security (DPO on bug bounty + malware data)"
+  ctx_size: 8192
+  gpu_layers: 99
+
+bugtrace-apex-f16:
+  repo: BugTraceAI/BugTraceAI-Apex-G4-26B-Q4
+  file: BugTraceAI-Apex-G4-26B-f16.gguf
+  description: "Gemma-4-26B MoE F16 — full precision version (50.5 GB)"
+  ctx_size: 8192
+  gpu_layers: 99
