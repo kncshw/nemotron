@@ -12,12 +12,12 @@ bugtrace-apex:
   repo: BugTraceAI/BugTraceAI-Apex-G4-26B-Q4
   file: BugTraceAI-Apex-G4-26B-Q4.gguf
   description: "Gemma-4-26B MoE Q4_K_M — offensive security (DPO on bug bounty + malware data)"
-  ctx_size: 8192
+  ctx_size: 131072
   gpu_layers: 99
 
 bugtrace-apex-f16:
   repo: BugTraceAI/BugTraceAI-Apex-G4-26B-Q4
   file: BugTraceAI-Apex-G4-26B-f16.gguf
   description: "Gemma-4-26B MoE F16 — full precision version (50.5 GB)"
-  ctx_size: 8192
+  ctx_size: 131072
   gpu_layers: 99
